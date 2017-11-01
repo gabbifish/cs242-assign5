@@ -62,7 +62,6 @@ function satisfiable_gen(atoms, cnf)
           end
         end
       end
-      -- return assignment
     else
       local clauses_copy = util.deep_copy(clauses)
       local clause = table.remove(clauses_copy, 1)

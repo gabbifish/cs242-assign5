@@ -142,11 +142,13 @@ module DatabaseImpl : Database = struct
   let rec saturate (rules : Rule.t list) (facts : Relation.Set.t) : Relation.Set.t =
     let new_facts = List.fold rules ~init:facts ~f:(fun rule ->
       let applicable_facts_l =
-      List.map rule.body ~f:(fun rel -> applicable_facts facts rel) in
+      List.map rule.body ~f:(fun rel ->
+        applicable_facts facts rel
+      ) in
       let candidates = cross_product applicable_facts_l in
 
       let new_facts_for_rule =
-      List.filter candidates ~f:(fun candidate ->
+      List.filter_map candidates ~f:(fun candidate ->
         substitute rule.head (List.fold (List.zip_exn candidate rule.body)
           ~init:empty_env ~f:(fun env (c_rel, r_rel) ->
             unify env c_rel r_rel
