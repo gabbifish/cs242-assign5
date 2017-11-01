@@ -1,5 +1,22 @@
 local util = {}
 
+function util.print_table(t)
+  function pr(t, i)
+    local spacing = " "
+    spacing = spacing:rep(i*2)
+    for k, v in pairs(t) do
+      if type(v) == "table" then
+        print(spacing .. tostring(k) .. " = {")
+        pr(v, i + 1)
+        print(spacing .. "}")
+      else
+        print(spacing .. tostring(k) .. " = " .. tostring(v))
+      end
+    end
+  end
+  pr(t, 0)
+end
+
 -- A deep copying helper function. Adapted from http://lua-users.org/wiki/CopyTable
 function util.deep_copy(orig)
     if type(orig) == 'table' then
