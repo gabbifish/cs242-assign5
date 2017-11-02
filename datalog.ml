@@ -140,19 +140,22 @@ module DatabaseImpl : Database = struct
   let facts t = t
 
   let rec saturate (rules : Rule.t list) (facts : Relation.Set.t) : Relation.Set.t =
-    let new_facts = List.fold rules ~init:facts ~f:(fun rule ->
+    let new_facts = List.fold rules ~init:facts ~f:(fun facts rule ->
       let applicable_facts_l =
-      List.map rule.body ~f:(fun rel -> applicable_facts facts rel) in
+        List.map rule.body ~f:(fun rel -> applicable_facts facts rel) in
       let candidates = cross_product applicable_facts_l in
 
       let new_facts_for_rule =
-      List.filter candidates ~f:(fun candidate ->
-        substitute rule.head (List.fold (List.zip_exn candidate rule.body)
-          ~init:empty_env ~f:(fun env (c_rel, r_rel) ->
-            unify env c_rel r_rel
-          )
-        )
-      ) in
+      List.filter_map candidates ~f:(fun candidate ->
+          try
+            Some (substitute rule.head (
+              List.fold (List.zip_exn candidate rule.body)
+              ~init:empty_env ~f:(fun env (c_rel, r_rel) ->
+                unify env c_rel r_rel)
+              )
+            )
+          with CannotUnify -> None
+        ) in
 
       let new_facts_forr_list = Relation.Set.of_list new_facts_for_rule in
       Relation.Set.union facts new_facts_forr_list
@@ -165,7 +168,12 @@ module DatabaseImpl : Database = struct
     Relation.Set.to_list (saturate rules (Relation.Set.of_list facts))
 
   let query (facts : t) (q : Relation.t) : Relation.t list =
-    raise Unimplemented
+    List.filter_map facts ~f:(fun fact ->
+      try
+        let new_env = unify empty_env fact q in
+        Some (fact)
+      with CannotUnify -> None
+    )
 end
 
 let run_saturation filename =
